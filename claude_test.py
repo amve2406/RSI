@@ -105,3 +105,31 @@ def skriv_ut_rapport(df):
 df = hent_rsi_data(OSLO_BORS_AKSJER)
 skriv_ut_rapport(df)
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+import os
+
+def send_email(subject, body):
+    sender = os.environ["EMAIL_ADDRESS"]
+    password = os.environ["EMAIL_PASSWORD"]
+    receiver = os.environ["EMAIL_ADDRESS"]
+
+    msg = MIMEMultipart()
+    msg["From"] = sender
+    msg["To"] = receiver
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "html"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(sender, password)
+        server.sendmail(sender, receiver, msg.toString())
+
+# Bygg e-post-innhold fra RSI-dataene dine
+# Tilpass denne delen til din eksisterende kode:
+rsi_html = rsi_df.to_html()  # <-- bruk din RSI-dataframe her
+
+send_email(
+    subject="Oslo Børs RSI – daglig rapport",
+    body=f"<h2>RSI-oversikt Oslo Børs</h2>{rsi_html}"
+)
