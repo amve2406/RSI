@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
-OSLO_BORS_AKSJER = {
+AKSJER = {
  # ══════════════════════════════════════
     # NORGE – Oslo Børs (utvidet liste)
     # ══════════════════════════════════════
