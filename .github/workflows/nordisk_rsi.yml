@@ -1,0 +1,28 @@
+name: Nordisk RSI rapport
+
+on:
+  schedule:
+    - cron: "00 15 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  run-rsi:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer pakker
+        run: pip install yfinance pandas numpy
+
+      - name: Kjør RSI-script
+        env:
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: python test_claude.py
