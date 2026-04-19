@@ -1,3 +1,5 @@
+
+
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -178,3 +180,5 @@ def send_email(df):
 
 df = hent_rsi_data(AKSJER)
 send_email(df)
+
+
