@@ -1,18 +1,13 @@
-
-
 import yfinance as yf
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 
 AKSJER = {
- # ══════════════════════════════════════
-    # NORGE – Oslo Børs (utvidet liste)
-    # ══════════════════════════════════════
     "EQNR.OL": "Equinor",
     "DNB.OL": "DNB Bank",
     "TEL.OL": "Telenor",
@@ -31,10 +26,6 @@ AKSJER = {
     "NOD.OL": "Nordic Semiconductor",
     "AKSO.OL": "Aker Solutions",
     "AKER.OL": "Aker ASA",
-
-    # ══════════════════════════════════════
-    # SVERIGE – OMXS30
-    # ══════════════════════════════════════
     "ABB.ST": "ABB",
     "ALFA.ST": "Alfa Laval",
     "ASSA-B.ST": "Assa Abloy B",
@@ -49,19 +40,15 @@ AKSJER = {
     "HM-B.ST": "H&M B",
     "HEXA-B.ST": "Hexagon B",
     "INVE-B.ST": "Investor B",
-    "NDA-SE.ST": "Nordea (SE)",
+    "NDA-SE.ST": "Nordea SE",
     "SAAB-B.ST": "Saab B",
     "SAND.ST": "Sandvik",
     "SEB-A.ST": "SEB A",
     "SKF-B.ST": "SKF B",
     "SWED-A.ST": "Swedbank A",
     "VOLV-B.ST": "Volvo B",
-
-    # ══════════════════════════════════════
-    # DANMARK – OMXC25
-    # ══════════════════════════════════════
-    "MAERSK-A.CO": "A.P. Møller-Mærsk A",
-    "MAERSK-B.CO": "A.P. Møller-Mærsk B",
+    "MAERSK-A.CO": "Maersk A",
+    "MAERSK-B.CO": "Maersk B",
     "AMBU-B.CO": "Ambu B",
     "CARL-B.CO": "Carlsberg B",
     "COLO-B.CO": "Coloplast B",
@@ -71,18 +58,11 @@ AKSJER = {
     "GMAB.CO": "Genmab",
     "GN.CO": "GN Store Nord",
     "NKT.CO": "NKT",
-    "NDA.CO": "Nordea (DK)",
     "NOVO-B.CO": "Novo Nordisk B",
-    "NSIS-B.CO": "Novonesis B",
     "PNDORA.CO": "Pandora",
-    "ROCK-B.CO": "Rockwool B",
     "TRYG.CO": "Tryg",
-    "VWS.CO": "Vestas Wind Systems",
-    "ORSTED.CO": "Ørsted",
-
-    # ══════════════════════════════════════
-    # FINLAND – OMXH25
-    # ══════════════════════════════════════
+    "VWS.CO": "Vestas",
+    "ORSTED.CO": "Orsted",
     "ELISA.HE": "Elisa",
     "FORTUM.HE": "Fortum",
     "KNEBV.HE": "KONE",
@@ -90,17 +70,17 @@ AKSJER = {
     "METSO.HE": "Metso",
     "NESTE.HE": "Neste",
     "NOKIA.HE": "Nokia",
-    "NDA-FI.HE": "Nordea (FI)",
+    "NDA-FI.HE": "Nordea FI",
     "SAMPO.HE": "Sampo",
     "STERV.HE": "Stora Enso R",
     "TIETO.HE": "TietoEVRY",
     "UPM.HE": "UPM-Kymmene",
     "VALMT.HE": "Valmet",
-    "WRT1V.HE": "Wärtsilä",
+    "WRT1V.HE": "Wartsila",
     "KEMIRA.HE": "Kemira",
     "KESKOB.HE": "Kesko B",
     "OUT1V.HE": "Outokumpu",
-    "HUH1V.HE": "Huhtamäki",
+    "HUH1V.HE": "Huhtamaki",
     "ORNBV.HE": "Orion",
     "QTCOM.HE": "Qt Group",
 }
@@ -121,18 +101,22 @@ def hent_rsi_data(tickers):
         try:
             data = yf.download(ticker, period="1y", progress=False, auto_adjust=False)
             if data.empty or len(data) < 50:
+                print(f"Ingen data for {ticker}")
                 continue
             close = data["Close"].squeeze()
             rsi = beregn_rsi(close)
             siste_kurs = round(float(close.iloc[-1]), 2)
+            bors = ticker.split(".")[-1]
             resultater.append({
                 "Ticker": ticker,
                 "Navn": navn,
-                "Kurs (NOK)": siste_kurs,
+                "Børs": bors,
+                "Kurs": siste_kurs,
                 "RSI 14": rsi
             })
-        except Exception:
-            pass
+            print(f"OK: {ticker} RSI={rsi}")
+        except Exception as e:
+            print(f"FEIL: {ticker} – {e}")
     return pd.DataFrame(resultater)
 
 def send_email(df):
@@ -147,38 +131,34 @@ def send_email(df):
 
     def tabell(df_del):
         if df_del.empty:
-            return "<p>Ingen.</p>"
+            return "<p><i>Ingen.</i></p>"
         return df_del.to_html(index=False, border=1)
 
     body = f"""
-    <h2>Oslo Børs RSI – daglig rapport</h2>
-    <p>Dato: {datetime.now().strftime('%d.%m.%Y')}</p>
-
-    <h3 style="color:green">🟢 OVERSOLGT (RSI &lt; 30) — mulig kjøpssignal</h3>
+    <html><body style="font-family: Arial, sans-serif;">
+    <h2>Nordisk RSI-rapport – {datetime.now().strftime('%d.%m.%Y')}</h2>
+    <p>Oslo Bors / Stockholm / Kobenhavn / Helsinki</p>
+    <h3 style="color:green">OVERSOLGT (RSI under 30) – mulig kjopssignal ({len(oversolgt)} aksjer)</h3>
     {tabell(oversolgt)}
-
-    <h3 style="color:red">🔴 OVERKJØPT (RSI &gt; 70) — mulig salgssignal</h3>
+    <h3 style="color:red">OVERKJOPT (RSI over 70) – mulig salgssignal ({len(overkjopt)} aksjer)</h3>
     {tabell(overkjopt)}
-
-    <h3>🟡 NØYTRAL SONE (RSI 30–70) — {len(noytralt)} aksjer</h3>
+    <h3>NOYTRAL SONE (RSI 30-70) – {len(noytralt)} aksjer</h3>
     {tabell(noytralt)}
-
-    <p><b>Totalt: {len(df)} | Overkjøpt: {len(overkjopt)} | Oversolgt: {len(oversolgt)}</b></p>
+    <p><b>Totalt: {len(df)} aksjer | Overkjopt: {len(overkjopt)} | Oversolgt: {len(oversolgt)}</b></p>
+    </body></html>
     """
 
     msg = MIMEMultipart()
     msg["From"] = sender
     msg["To"] = receiver
-    msg["Subject"] = f"Oslo Børs RSI – {datetime.now().strftime('%d.%m.%Y')}"
+    msg["Subject"] = f"Nordisk RSI – {datetime.now().strftime('%d.%m.%Y')}"
     msg.attach(MIMEText(body, "html"))
 
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
         server.login(sender, password)
         server.sendmail(sender, receiver, msg.as_string())
 
-    print("E-post sendt!")
+    print(f"E-post sendt! {len(df)} aksjer analysert.")
 
 df = hent_rsi_data(AKSJER)
 send_email(df)
-
-
