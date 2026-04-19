@@ -176,5 +176,5 @@ def send_email(df):
 
     print("E-post sendt!")
 
-df = hent_rsi_data(OSLO_BORS_AKSJER)
+df = hent_rsi_data(AKSJER)
 send_email(df)
