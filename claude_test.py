@@ -8,6 +8,9 @@ from email.mime.multipart import MIMEMultipart
 import os
 
 OSLO_BORS_AKSJER = {
+ # ══════════════════════════════════════
+    # NORGE – Oslo Børs (utvidet liste)
+    # ══════════════════════════════════════
     "EQNR.OL": "Equinor",
     "DNB.OL": "DNB Bank",
     "TEL.OL": "Telenor",
@@ -18,18 +21,86 @@ OSLO_BORS_AKSJER = {
     "SALM.OL": "SalMar",
     "SUBC.OL": "Subsea 7",
     "NHY.OL": "Norsk Hydro",
-    "BWLPG.OL": "BW LPG",
     "KOG.OL": "Kongsberg Gruppen",
-    "RECSI.OL": "REC Silicon",
     "SCATC.OL": "Scatec",
-    "BORR.OL": "Borr Drilling",
-    "NSKOG.OL": "Norske Skog",
-    "TGS.OL": "TGS",
     "STB.OL": "Storebrand",
     "GJF.OL": "Gjensidige Forsikring",
     "AUTO.OL": "AutoStore",
     "NOD.OL": "Nordic Semiconductor",
     "AKSO.OL": "Aker Solutions",
+    "AKER.OL": "Aker ASA",
+
+    # ══════════════════════════════════════
+    # SVERIGE – OMXS30
+    # ══════════════════════════════════════
+    "ABB.ST": "ABB",
+    "ALFA.ST": "Alfa Laval",
+    "ASSA-B.ST": "Assa Abloy B",
+    "AZN.ST": "AstraZeneca",
+    "ATCO-A.ST": "Atlas Copco A",
+    "BOL.ST": "Boliden",
+    "EPI-A.ST": "Epiroc A",
+    "EQT.ST": "EQT",
+    "ERIC-B.ST": "Ericsson B",
+    "EVO.ST": "Evolution",
+    "SHB-A.ST": "Handelsbanken A",
+    "HM-B.ST": "H&M B",
+    "HEXA-B.ST": "Hexagon B",
+    "INVE-B.ST": "Investor B",
+    "NDA-SE.ST": "Nordea (SE)",
+    "SAAB-B.ST": "Saab B",
+    "SAND.ST": "Sandvik",
+    "SEB-A.ST": "SEB A",
+    "SKF-B.ST": "SKF B",
+    "SWED-A.ST": "Swedbank A",
+    "VOLV-B.ST": "Volvo B",
+
+    # ══════════════════════════════════════
+    # DANMARK – OMXC25
+    # ══════════════════════════════════════
+    "MAERSK-A.CO": "A.P. Møller-Mærsk A",
+    "MAERSK-B.CO": "A.P. Møller-Mærsk B",
+    "AMBU-B.CO": "Ambu B",
+    "CARL-B.CO": "Carlsberg B",
+    "COLO-B.CO": "Coloplast B",
+    "DANSKE.CO": "Danske Bank",
+    "DEMANT.CO": "Demant",
+    "DSV.CO": "DSV",
+    "GMAB.CO": "Genmab",
+    "GN.CO": "GN Store Nord",
+    "NKT.CO": "NKT",
+    "NDA.CO": "Nordea (DK)",
+    "NOVO-B.CO": "Novo Nordisk B",
+    "NSIS-B.CO": "Novonesis B",
+    "PNDORA.CO": "Pandora",
+    "ROCK-B.CO": "Rockwool B",
+    "TRYG.CO": "Tryg",
+    "VWS.CO": "Vestas Wind Systems",
+    "ORSTED.CO": "Ørsted",
+
+    # ══════════════════════════════════════
+    # FINLAND – OMXH25
+    # ══════════════════════════════════════
+    "ELISA.HE": "Elisa",
+    "FORTUM.HE": "Fortum",
+    "KNEBV.HE": "KONE",
+    "KCR.HE": "Konecranes",
+    "METSO.HE": "Metso",
+    "NESTE.HE": "Neste",
+    "NOKIA.HE": "Nokia",
+    "NDA-FI.HE": "Nordea (FI)",
+    "SAMPO.HE": "Sampo",
+    "STERV.HE": "Stora Enso R",
+    "TIETO.HE": "TietoEVRY",
+    "UPM.HE": "UPM-Kymmene",
+    "VALMT.HE": "Valmet",
+    "WRT1V.HE": "Wärtsilä",
+    "KEMIRA.HE": "Kemira",
+    "KESKOB.HE": "Kesko B",
+    "OUT1V.HE": "Outokumpu",
+    "HUH1V.HE": "Huhtamäki",
+    "ORNBV.HE": "Orion",
+    "QTCOM.HE": "Qt Group",
 }
 
 def beregn_rsi(priser, perioder=14):
