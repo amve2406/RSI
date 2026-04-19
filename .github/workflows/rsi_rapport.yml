@@ -2,7 +2,7 @@ name: Oslo Børs RSI – daglig rapport
 
 on:
   schedule:
-    - cron: "30 15 * * 1-5"
+    - cron: "00 15 * * 1-5"
   workflow_dispatch:
 
 jobs:
@@ -25,4 +25,4 @@ jobs:
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
-        run: python claude_test.py
+        run: python test_claude.py
