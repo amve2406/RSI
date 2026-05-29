@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <title>RSI Posisjoner</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
+    input { width: 100%; padding: 8px; margin: 6px 0 16px; box-sizing: border-box; font-size: 16px; }
+    button { background: #2ea44f; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; width: 100%; }
+    #melding { margin-top: 16px; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h2>📈 Legg til posisjon</h2>
+  <label>Ticker</label>
+  <input type="text" id="ticker" placeholder="f.eks. EQNR.OL">
+  <label>Navn</label>
+  <input type="text" id="navn" placeholder="f.eks. Equinor">
+  <label>Kjøpskurs</label>
+  <input type="number" id="kjopskurs" placeholder="f.eks. 285.50" step="0.01">
+  <label>Antall aksjer</label>
+  <input type="number" id="antall" placeholder="f.eks. 100">
+  <button onclick="lagrePositon()">Lagre posisjon</button>
+  <div id="melding"></div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbzwy59fxVohZ-8iI4Ix0bOxARNukv4vliowAXY-hU1SA_HbW7jZExyt99YDnD2nnt34/exec";
+
+    // Hent ticker og navn fra URL hvis lenket fra e-post
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("ticker")) document.getElementById("ticker").value = params.get("ticker");
+    if (params.get("navn")) document.getElementById("navn").value = params.get("navn");
+
+    async function lagrePositon() {
+      const ticker = document.getElementById("ticker").value.trim();
+      const navn = document.getElementById("navn").value.trim();
+      const kjopskurs = parseFloat(document.getElementById("kjopskurs").value);
+      const antall = parseInt(document.getElementById("antall").value);
+
+      if (!ticker || !navn || !kjopskurs || !antall) {
+        document.getElementById("melding").innerText = "⚠️ Fyll inn alle felt!";
+        return;
+      }
+
+      document.getElementById("melding").innerText = "Lagrer...";
+
+      try {
+        await fetch(API_URL, {
+          method: "POST",
+          mode: "no-cors",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ticker, navn, kjopskurs, antall })
+        });
+        document.getElementById("melding").innerHTML = `✅ <b>${navn}</b> lagret!`;
+      } catch (err) {
+        document.getElementById("melding").innerText = "❌ Feil ved lagring.";
+      }
+    }
+  </script>
+</body>
+</html>
