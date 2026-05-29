@@ -255,3 +255,4 @@ df = hent_rsi_data(AKSJER)
 posisjoner = hent_posisjoner()
 posisjoner_html = bygg_posisjoner_html(posisjoner)
 send_email(df, posisjoner_html)
+
