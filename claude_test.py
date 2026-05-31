@@ -9,7 +9,7 @@ import os
 import urllib.request
 import json
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxEplO2nTyVZvLCcQhjl_rdvkebSAaWUMeY6vR3LByDhbKZBWMtkK_2_oZPmTJvVRI/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRwZUw72FGehcLNvwtFx7YeOk1ne5rwXaPWP7CEywYPM9Ktay70RCBS-Ps8OQXtMDA/exec"
 GITHUB_PAGES_URL = "https://amve2406.github.io/RSI/"
 
 AKSJER = {
@@ -146,12 +146,12 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
     aktive = [p for p in alle_posisjoner if p.get("Status") == "Aktiv"]
     solgte = [p for p in alle_posisjoner if p.get("Status") == "Solgt"]
 
-    # Lag RSI-oppslagstabell
     rsi_lookup = {}
     if not rsi_df.empty:
         for _, row in rsi_df.iterrows():
             rsi_lookup[row["Ticker"]] = row["RSI 14"]
 
+    # Aktive posisjoner
     aktiv_html = ""
     total_aktiv_pl = 0
 
@@ -180,7 +180,6 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                 total_aktiv_pl += pl
                 farge = "green" if pl >= 0 else "red"
                 tegn = "+" if pl >= 0 else ""
-
                 selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn={navn}"
 
                 rader += f"""<tr>
@@ -260,17 +259,16 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
         <p><b>Realisert P/L: <span style="color:{farge_solgt}">{tegn_solgt}{round(total_realisert_pl, 2)} kr</span></b></p>
         """
 
-    # Total P/L
-    total_pl = total_aktiv_pl + total_realisert_pl
-    farge_total = "green" if total_pl >= 0 else "red"
-    tegn_total = "+" if total_pl >= 0 else ""
-
+    # Kun realisert total P/L
+    farge_total = "green" if total_realisert_pl >= 0 else "red"
+    tegn_total = "+" if total_realisert_pl >= 0 else ""
     total_html = f"""
-    <p style="font-size:18px"><b>💰 Total P/L (urealisert + realisert):
-    <span style="color:{farge_total}">{tegn_total}{round(total_pl, 2)} kr</span></b></p>
+    <hr>
+    <p style="font-size:18px"><b>💰 Total realisert P/L:
+    <span style="color:{farge_total}">{tegn_total}{round(total_realisert_pl, 2)} kr</span></b></p>
     """
 
-    return aktiv_html + solgt_html + total_html
+    return aktiv_html + total_html + solgt_html
 
 def send_email(df, posisjoner_html):
     sender = os.environ["EMAIL_ADDRESS"]
