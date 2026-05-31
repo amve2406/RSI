@@ -9,7 +9,7 @@ import os
 import urllib.request
 import json
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzwy59fxVohZ-8iI4Ix0bOxARNukv4vliowAXY-hU1SA_HbW7jZExyt99YDnD2nnt34/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzFolgkXm6KKpMe5EY4dtDlaIi2U6qbkl6Tjwv7_f9o1-22LmHwaGL1dwGFj21ZoU/exec"
 GITHUB_PAGES_URL = "https://amve2406.github.io/RSI/"
 
 AKSJER = {
@@ -132,6 +132,16 @@ def hent_posisjoner():
         print(f"Kunne ikke hente posisjoner: {e}")
         return []
 
+def formater_dato(dato_str):
+    try:
+        # Håndter både "29.5.2026" og "2026-05-28T22:00:00.000Z"
+        if "T" in str(dato_str):
+            dt = datetime.fromisoformat(str(dato_str).replace("Z", "+00:00"))
+            return dt.strftime("%d.%m.%Y")
+        return str(dato_str)
+    except:
+        return str(dato_str)
+
 def bygg_posisjoner_html(posisjoner):
     if not posisjoner:
         return "<p><i>Ingen aktive posisjoner.</i></p>"
@@ -142,13 +152,12 @@ def bygg_posisjoner_html(posisjoner):
     for p in posisjoner:
         try:
             ticker = p.get("Ticker", "")
-            # Legg til børs-suffiks hvis mangler
             if "." not in ticker:
                 ticker = ticker + ".OL"
             navn = p.get("Navn", "")
             kjopskurs = float(p.get("Kjøpskurs", 0))
             antall = int(p.get("Antall", 0))
-            dato = p.get("Dato", "")
+            dato = formater_dato(p.get("Dato", ""))
 
             data = yf.download(ticker, period="5d", progress=False, auto_adjust=False)
             if data.empty:
@@ -161,14 +170,16 @@ def bygg_posisjoner_html(posisjoner):
             farge = "green" if pl >= 0 else "red"
             tegn = "+" if pl >= 0 else ""
 
-            rader += f"""
-            <tr>
+            selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn=navn"
+
+            rader += f"""<tr>
                 <td>{navn} ({ticker})</td>
                 <td>{kjopskurs}</td>
                 <td>{dagens_kurs}</td>
                 <td>{antall}</td>
                 <td style="color:{farge}"><b>{tegn}{pl} kr ({tegn}{pl_pst}%)</b></td>
                 <td>{dato}</td>
+                <td><a href="{selg_lenke}" style="background:#d93025;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;">Selg</a></td>
             </tr>"""
         except Exception as e:
             print(f"Feil på posisjon {p}: {e}")
@@ -185,6 +196,7 @@ def bygg_posisjoner_html(posisjoner):
             <th>Antall</th>
             <th>P/L</th>
             <th>Kjøpsdato</th>
+            <th></th>
         </tr>
         {rader}
     </table>
@@ -255,4 +267,3 @@ df = hent_rsi_data(AKSJER)
 posisjoner = hent_posisjoner()
 posisjoner_html = bygg_posisjoner_html(posisjoner)
 send_email(df, posisjoner_html)
-
