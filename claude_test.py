@@ -9,7 +9,7 @@ import os
 import urllib.request
 import json
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwzFolgkXm6KKpMe5EY4dtDlaIi2U6qbkl6Tjwv7_f9o1-22LmHwaGL1dwGFj21ZoU/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZMLwsy1BI_g1GxZK6wJZYZdQLBoa36C3Y1-bzQiF7j5P-dGsGLV3ULJ2_DOc4I7X9/exec"
 GITHUB_PAGES_URL = "https://amve2406.github.io/RSI/"
 
 AKSJER = {
@@ -134,7 +134,6 @@ def hent_posisjoner():
 
 def formater_dato(dato_str):
     try:
-        # Håndter både "29.5.2026" og "2026-05-28T22:00:00.000Z"
         if "T" in str(dato_str):
             dt = datetime.fromisoformat(str(dato_str).replace("Z", "+00:00"))
             return dt.strftime("%d.%m.%Y")
@@ -170,7 +169,8 @@ def bygg_posisjoner_html(posisjoner):
             farge = "green" if pl >= 0 else "red"
             tegn = "+" if pl >= 0 else ""
 
-            selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn=navn"
+            # Fikset navn-bug her
+            selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn={navn}"
 
             rader += f"""<tr>
                 <td>{navn} ({ticker})</td>
