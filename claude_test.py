@@ -9,7 +9,7 @@ import os
 import urllib.request
 import json
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxYQ2BTRwCYfZUpTZuqmMt9nJs6r212y1_yNje8ZMb5l_AT3x8ueFo62Bff0fBXIU1y/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxRwZUw72FGehcLNvwtFx7YeOk1ne5rwXaPWP7CEywYPM9Ktay70RCBS-Ps8OQXtMDA/exec"
 GITHUB_PAGES_URL = "https://amve2406.github.io/RSI/"
 
 AKSJER = {
