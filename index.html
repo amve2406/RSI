@@ -16,7 +16,7 @@
   <div id="app"></div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwZMLwsy1BI_g1GxZK6wJZYZdQLBoa36C3Y1-bzQiF7j5P-dGsGLV3ULJ2_DOc4I7X9/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxYQ2BTRwCYfZUpTZuqmMt9nJs6r212y1_yNje8ZMb5l_AT3x8ueFo62Bff0fBXIU1y/exec";
     const params = new URLSearchParams(window.location.search);
     const action = params.get("action");
     const ticker = params.get("ticker") || "";
@@ -83,8 +83,8 @@
       }
     }
 
-    async function selgPositon(ticker, navn) {
-      const salgskurs = parseFloat(document.getElementById("salgskurs").value);
+    function selgPositon(ticker, navn) {
+      const salgskurs = parseFloat(document.getElementById("salgskurs").value.replace(",", "."));
       const antall_solgt = parseInt(document.getElementById("antall_solgt").value);
 
       if (!salgskurs || !antall_solgt) {
@@ -92,19 +92,11 @@
         return;
       }
 
-      document.getElementById("melding").innerText = "Selger...";
+      const url = `${API_URL}?action=selg&ticker=${encodeURIComponent(ticker)}&salgskurs=${salgskurs}&antall_solgt=${antall_solgt}`;
+      window.open(url, "_blank");
 
-      try {
-        const response = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "selg", ticker, salgskurs, antall_solgt })
-        });
-        document.getElementById("melding").innerHTML = `✅ <b>${navn} (${ticker})</b> solgt for ${salgskurs} kr!`;
-        document.querySelector("button").disabled = true;
-      } catch (err) {
-        document.getElementById("melding").innerText = "❌ Feil ved salg.";
-      }
+      document.getElementById("melding").innerHTML = `✅ <b>${navn} (${ticker})</b> solgt!`;
+      document.querySelector("button").disabled = true;
     }
   </script>
 </body>
