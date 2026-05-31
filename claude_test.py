@@ -122,9 +122,10 @@ def hent_rsi_data(tickers):
             print(f"FEIL: {ticker} – {e}")
     return pd.DataFrame(resultater)
 
-def hent_posisjoner():
+def hent_alle_posisjoner():
     try:
-        req = urllib.request.Request(APPS_SCRIPT_URL)
+        url = APPS_SCRIPT_URL + "?hentAlle=true"
+        req = urllib.request.Request(url)
         with urllib.request.urlopen(req) as response:
             data = json.loads(response.read().decode())
         return data
@@ -141,66 +142,135 @@ def formater_dato(dato_str):
     except:
         return str(dato_str)
 
-def bygg_posisjoner_html(posisjoner):
-    if not posisjoner:
-        return "<p><i>Ingen aktive posisjoner.</i></p>"
+def bygg_posisjoner_html(alle_posisjoner, rsi_df):
+    aktive = [p for p in alle_posisjoner if p.get("Status") == "Aktiv"]
+    solgte = [p for p in alle_posisjoner if p.get("Status") == "Solgt"]
 
-    rader = ""
-    total_pl = 0
+    # Lag RSI-oppslagstabell
+    rsi_lookup = {}
+    if not rsi_df.empty:
+        for _, row in rsi_df.iterrows():
+            rsi_lookup[row["Ticker"]] = row["RSI 14"]
 
-    for p in posisjoner:
-        try:
-            ticker = p.get("Ticker", "")
-            if "." not in ticker:
-                ticker = ticker + ".OL"
-            navn = p.get("Navn", "")
-            kjopskurs = float(str(p.get("Kjøpskurs", 0)).replace(",", "."))
-            antall = int(str(p.get("Antall", 0)).replace(",", "."))
-            dato = formater_dato(p.get("Dato", ""))
+    aktiv_html = ""
+    total_aktiv_pl = 0
 
-            data = yf.download(ticker, period="5d", progress=False, auto_adjust=False)
-            if data.empty:
-                continue
-            dagens_kurs = round(float(data["Close"].squeeze().iloc[-1]), 2)
+    if not aktive:
+        aktiv_html = "<p><i>Ingen aktive posisjoner.</i></p>"
+    else:
+        rader = ""
+        for p in aktive:
+            try:
+                ticker = p.get("Ticker", "")
+                if "." not in ticker:
+                    ticker = ticker + ".OL"
+                navn = p.get("Navn", "")
+                kjopskurs = float(str(p.get("Kjøpskurs", 0)).replace(",", "."))
+                antall = int(str(p.get("Antall", 0)).replace(",", "."))
+                dato = formater_dato(p.get("Dato", ""))
+                rsi = rsi_lookup.get(ticker, "–")
 
-            pl = round((dagens_kurs - kjopskurs) * antall, 2)
-            pl_pst = round(((dagens_kurs - kjopskurs) / kjopskurs) * 100, 2)
-            total_pl += pl
-            farge = "green" if pl >= 0 else "red"
-            tegn = "+" if pl >= 0 else ""
+                data = yf.download(ticker, period="5d", progress=False, auto_adjust=False)
+                if data.empty:
+                    continue
+                dagens_kurs = round(float(data["Close"].squeeze().iloc[-1]), 2)
 
-            selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn={navn}"
+                pl = round((dagens_kurs - kjopskurs) * antall, 2)
+                pl_pst = round(((dagens_kurs - kjopskurs) / kjopskurs) * 100, 2)
+                total_aktiv_pl += pl
+                farge = "green" if pl >= 0 else "red"
+                tegn = "+" if pl >= 0 else ""
 
-            rader += f"""<tr>
-                <td>{navn} ({ticker})</td>
-                <td>{kjopskurs}</td>
-                <td>{dagens_kurs}</td>
-                <td>{antall}</td>
-                <td style="color:{farge}"><b>{tegn}{pl} kr ({tegn}{pl_pst}%)</b></td>
-                <td>{dato}</td>
-                <td><a href="{selg_lenke}" style="background:#d93025;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;">Selg</a></td>
-            </tr>"""
-        except Exception as e:
-            print(f"Feil på posisjon {p}: {e}")
+                selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn={navn}"
 
-    total_farge = "green" if total_pl >= 0 else "red"
-    tegn = "+" if total_pl >= 0 else ""
+                rader += f"""<tr>
+                    <td>{navn} ({ticker})</td>
+                    <td>{kjopskurs}</td>
+                    <td>{dagens_kurs}</td>
+                    <td>{antall}</td>
+                    <td style="color:{farge}"><b>{tegn}{pl} kr ({tegn}{pl_pst}%)</b></td>
+                    <td>{dato}</td>
+                    <td>{rsi}</td>
+                    <td><a href="{selg_lenke}" style="background:#d93025;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;">Selg</a></td>
+                </tr>"""
+            except Exception as e:
+                print(f"Feil på aktiv posisjon {p}: {e}")
 
-    return f"""
-    <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
-        <tr style="background:#f0f0f0">
-            <th>Aksje</th>
-            <th>Kjøpskurs</th>
-            <th>Dagens kurs</th>
-            <th>Antall</th>
-            <th>P/L</th>
-            <th>Kjøpsdato</th>
-            <th></th>
-        </tr>
-        {rader}
-    </table>
-    <p><b>Total P/L: <span style="color:{total_farge}">{tegn}{round(total_pl, 2)} kr</span></b></p>
+        farge_aktiv = "green" if total_aktiv_pl >= 0 else "red"
+        tegn_aktiv = "+" if total_aktiv_pl >= 0 else ""
+
+        aktiv_html = f"""
+        <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
+            <tr style="background:#f0f0f0">
+                <th>Aksje</th><th>Kjøpskurs</th><th>Dagens kurs</th>
+                <th>Antall</th><th>P/L</th><th>Kjøpsdato</th><th>RSI 14</th><th></th>
+            </tr>
+            {rader}
+        </table>
+        <p><b>Urealisert P/L: <span style="color:{farge_aktiv}">{tegn_aktiv}{round(total_aktiv_pl, 2)} kr</span></b></p>
+        """
+
+    # Solgte posisjoner
+    solgt_html = ""
+    total_realisert_pl = 0
+
+    if solgte:
+        rader_solgt = ""
+        for p in solgte:
+            try:
+                ticker = p.get("Ticker", "")
+                navn = p.get("Navn", "")
+                kjopskurs = float(str(p.get("Kjøpskurs", 0)).replace(",", "."))
+                antall = int(str(p.get("Antall", 0)).replace(",", "."))
+                salgskurs = float(str(p.get("Salgskurs", 0)).replace(",", "."))
+                antall_solgt = int(str(p.get("Antall solgt", antall)).replace(",", "."))
+                kjopsdato = formater_dato(p.get("Dato", ""))
+                salgsdato = formater_dato(p.get("Salgsdato", ""))
+
+                pl = round((salgskurs - kjopskurs) * antall_solgt, 2)
+                pl_pst = round(((salgskurs - kjopskurs) / kjopskurs) * 100, 2)
+                total_realisert_pl += pl
+                farge = "green" if pl >= 0 else "red"
+                tegn = "+" if pl >= 0 else ""
+
+                rader_solgt += f"""<tr>
+                    <td>{navn} ({ticker})</td>
+                    <td>{kjopskurs}</td>
+                    <td>{salgskurs}</td>
+                    <td>{antall_solgt}</td>
+                    <td style="color:{farge}"><b>{tegn}{pl} kr ({tegn}{pl_pst}%)</b></td>
+                    <td>{kjopsdato}</td>
+                    <td>{salgsdato}</td>
+                </tr>"""
+            except Exception as e:
+                print(f"Feil på solgt posisjon {p}: {e}")
+
+        farge_solgt = "green" if total_realisert_pl >= 0 else "red"
+        tegn_solgt = "+" if total_realisert_pl >= 0 else ""
+
+        solgt_html = f"""
+        <h3 style="color:#555">📋 Solgte posisjoner</h3>
+        <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
+            <tr style="background:#f0f0f0">
+                <th>Aksje</th><th>Kjøpskurs</th><th>Salgskurs</th>
+                <th>Antall</th><th>Realisert P/L</th><th>Kjøpsdato</th><th>Salgsdato</th>
+            </tr>
+            {rader_solgt}
+        </table>
+        <p><b>Realisert P/L: <span style="color:{farge_solgt}">{tegn_solgt}{round(total_realisert_pl, 2)} kr</span></b></p>
+        """
+
+    # Total P/L
+    total_pl = total_aktiv_pl + total_realisert_pl
+    farge_total = "green" if total_pl >= 0 else "red"
+    tegn_total = "+" if total_pl >= 0 else ""
+
+    total_html = f"""
+    <p style="font-size:18px"><b>💰 Total P/L (urealisert + realisert):
+    <span style="color:{farge_total}">{tegn_total}{round(total_pl, 2)} kr</span></b></p>
     """
+
+    return aktiv_html + solgt_html + total_html
 
 def send_email(df, posisjoner_html):
     sender = os.environ["EMAIL_ADDRESS"]
@@ -235,7 +305,7 @@ def send_email(df, posisjoner_html):
     <html><body style="font-family: Arial, sans-serif;">
     <h2>Nordisk RSI-rapport – {datetime.now().strftime('%d.%m.%Y')}</h2>
 
-    <h2 style="color:#1a73e8">📊 Aktive posisjoner</h2>
+    <h2 style="color:#1a73e8">📊 Posisjoner</h2>
     {posisjoner_html}
 
     <hr>
@@ -263,6 +333,6 @@ def send_email(df, posisjoner_html):
     print(f"E-post sendt! {len(df)} aksjer analysert.")
 
 df = hent_rsi_data(AKSJER)
-posisjoner = hent_posisjoner()
-posisjoner_html = bygg_posisjoner_html(posisjoner)
+alle_posisjoner = hent_alle_posisjoner()
+posisjoner_html = bygg_posisjoner_html(alle_posisjoner, df)
 send_email(df, posisjoner_html)
