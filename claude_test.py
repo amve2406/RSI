@@ -13,6 +13,7 @@ APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQKGVvsPvm9fYgtN8kp7
 GITHUB_PAGES_URL = "https://amve2406.github.io/RSI/"
 
 AKSJER = {
+    "TOM.OL": "Tomra",
     "EQNR.OL": "Equinor",
     "DNB.OL": "DNB Bank",
     "TEL.OL": "Telenor",
