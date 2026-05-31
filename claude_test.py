@@ -154,8 +154,8 @@ def bygg_posisjoner_html(posisjoner):
             if "." not in ticker:
                 ticker = ticker + ".OL"
             navn = p.get("Navn", "")
-            kjopskurs = float(p.get("Kjøpskurs", 0))
-            antall = int(p.get("Antall", 0))
+            kjopskurs = float(str(p.get("Kjøpskurs", 0)).replace(",", "."))
+            antall = int(str(p.get("Antall", 0)).replace(",", "."))
             dato = formater_dato(p.get("Dato", ""))
 
             data = yf.download(ticker, period="5d", progress=False, auto_adjust=False)
@@ -169,7 +169,6 @@ def bygg_posisjoner_html(posisjoner):
             farge = "green" if pl >= 0 else "red"
             tegn = "+" if pl >= 0 else ""
 
-            # Fikset navn-bug her
             selg_lenke = f"{GITHUB_PAGES_URL}?action=selg&ticker={ticker}&navn={navn}"
 
             rader += f"""<tr>
