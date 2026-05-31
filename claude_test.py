@@ -197,7 +197,6 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
 
         farge_aktiv = "green" if total_aktiv_pl >= 0 else "red"
         tegn_aktiv = "+" if total_aktiv_pl >= 0 else ""
-
         aktiv_html = f"""
         <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
             <tr style="background:#f0f0f0">
@@ -246,9 +245,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
 
         farge_solgt = "green" if total_realisert_pl >= 0 else "red"
         tegn_solgt = "+" if total_realisert_pl >= 0 else ""
-
         solgt_html = f"""
-        <h3 style="color:#555">📋 Solgte posisjoner</h3>
         <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
             <tr style="background:#f0f0f0">
                 <th>Aksje</th><th>Kjøpskurs</th><th>Salgskurs</th>
@@ -259,18 +256,16 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
         <p><b>Realisert P/L: <span style="color:{farge_solgt}">{tegn_solgt}{round(total_realisert_pl, 2)} kr</span></b></p>
         """
 
-    # Kun realisert total P/L
     farge_total = "green" if total_realisert_pl >= 0 else "red"
     tegn_total = "+" if total_realisert_pl >= 0 else ""
     total_html = f"""
-    <hr>
     <p style="font-size:18px"><b>💰 Total realisert P/L:
     <span style="color:{farge_total}">{tegn_total}{round(total_realisert_pl, 2)} kr</span></b></p>
     """
 
-    return aktiv_html + total_html + solgt_html
+    return aktiv_html + total_html, solgt_html
 
-def send_email(df, posisjoner_html):
+def send_email(df, posisjoner_html, solgte_html):
     sender = os.environ["EMAIL_ADDRESS"]
     password = os.environ["EMAIL_PASSWORD"]
     receiver = os.environ["EMAIL_ADDRESS"]
@@ -315,6 +310,9 @@ def send_email(df, posisjoner_html):
     {tabell_med_knapper(noytralt)}
 
     <p><b>Totalt: {len(df)} aksjer | Overkjøpt: {len(overkjopt)} | Oversolgt: {len(oversolgt)}</b></p>
+    <hr>
+    <h3 style="color:#555">📋 Solgte posisjoner</h3>
+    {solgte_html}
     </body></html>
     """
 
@@ -332,5 +330,5 @@ def send_email(df, posisjoner_html):
 
 df = hent_rsi_data(AKSJER)
 alle_posisjoner = hent_alle_posisjoner()
-posisjoner_html = bygg_posisjoner_html(alle_posisjoner, df)
-send_email(df, posisjoner_html)
+posisjoner_html, solgte_html = bygg_posisjoner_html(alle_posisjoner, df)
+send_email(df, posisjoner_html, solgte_html)
