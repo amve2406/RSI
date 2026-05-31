@@ -5,6 +5,7 @@
   <title>RSI Posisjoner</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 20px; }
+    label { font-weight: bold; }
     input { width: 100%; padding: 8px; margin: 6px 0 16px; box-sizing: border-box; font-size: 16px; }
     .btn-green { background: #2ea44f; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; width: 100%; }
     .btn-red { background: #d93025; color: white; padding: 10px 20px; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; width: 100%; }
@@ -15,7 +16,7 @@
   <div id="app"></div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwzFolgkXm6KKpMe5EY4dtDlaIi2U6qbkl6Tjwv7_f9o1-22LmHwaGL1dwGFj21ZoU/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbwZMLwsy1BI_g1GxZK6wJZYZdQLBoa36C3Y1-bzQiF7j5P-dGsGLV3ULJ2_DOc4I7X9/exec";
     const params = new URLSearchParams(window.location.search);
     const action = params.get("action");
     const ticker = params.get("ticker") || "";
@@ -46,8 +47,12 @@
     function visSelgSkjema(ticker, navn) {
       document.getElementById("app").innerHTML = `
         <h2>🔴 Selg posisjon</h2>
-        <p>Er du sikker på at du vil markere <b>${navn} (${ticker})</b> som solgt?</p>
-        <button class="btn-red" onclick="selgPositon('${ticker}')">Bekreft salg</button>
+        <p>Selger: <b>${navn} (${ticker})</b></p>
+        <label>Salgskurs</label>
+        <input type="number" id="salgskurs" placeholder="f.eks. 310.50" step="0.01">
+        <label>Antall solgt</label>
+        <input type="number" id="antall_solgt" placeholder="f.eks. 10">
+        <button class="btn-red" onclick="selgPositon('${ticker}', '${navn}')">Bekreft salg</button>
         <div id="melding"></div>
       `;
     }
@@ -78,17 +83,24 @@
       }
     }
 
-    async function selgPositon(ticker) {
+    async function selgPositon(ticker, navn) {
+      const salgskurs = parseFloat(document.getElementById("salgskurs").value);
+      const antall_solgt = parseInt(document.getElementById("antall_solgt").value);
+
+      if (!salgskurs || !antall_solgt) {
+        document.getElementById("melding").innerText = "⚠️ Fyll inn salgskurs og antall!";
+        return;
+      }
+
       document.getElementById("melding").innerText = "Selger...";
 
       try {
-        await fetch(API_URL, {
+        const response = await fetch(API_URL, {
           method: "POST",
-          mode: "no-cors",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "selg", ticker: ticker })
+          body: JSON.stringify({ action: "selg", ticker, salgskurs, antall_solgt })
         });
-        document.getElementById("melding").innerHTML = `✅ <b>${ticker}</b> markert som solgt!`;
+        document.getElementById("melding").innerHTML = `✅ <b>${navn} (${ticker})</b> solgt for ${salgskurs} kr!`;
         document.querySelector("button").disabled = true;
       } catch (err) {
         document.getElementById("melding").innerText = "❌ Feil ved salg.";
