@@ -10,7 +10,8 @@ import urllib.request
 import json
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQKGVvsPvm9fYgtN8kp7N91aIZDiBW-T2SH4UBE-504ubDWg9DqJTWx0khqhksxEPO/exec"
-GITHUB_PAGES_URL = "https://amve2406.github.io/RSI/"
+# Epost-knappene (Legg til / Selg) peker nå til Apps Script-siden i stedet for GitHub Pages
+GITHUB_PAGES_URL = APPS_SCRIPT_URL
 
 AKSJER = {
     "TOM.OL": "Tomra",
