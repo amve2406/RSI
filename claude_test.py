@@ -9,7 +9,7 @@ import os
 import urllib.request
 import json
 
-APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQKGVvsPvm9fYgtN8kp7N91aIZDiBW-T2SH4UBE-504ubDWg9DqJTWx0khqhksxEPO/exec"
+APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4P4xvjrbzRJow1mzvQ0ppWCaAKHXHoijppIcSI7qLnv5s3mV_ZFXhALaxF0fJ6EHZbg/exec"
 # Epost-knappene (Legg til / Selg) peker nå til Apps Script-siden i stedet for GitHub Pages
 GITHUB_PAGES_URL = APPS_SCRIPT_URL
 
