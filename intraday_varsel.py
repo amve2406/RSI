@@ -10,7 +10,7 @@ import json
 
 APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4P4xvjrbzRJow1mzvQ0ppWCaAKHXHoijppIcSI7qLnv5s3mV_ZFXhALaxF0fJ6EHZbg/exec"
 
-SALG_RSI = 65          # RSI-nivå du selger på
+SALG_RSI = 25          # RSI-nivå du selger på
 PERIODER = 14
 STATE_FIL = "varsel_state.json"
 
