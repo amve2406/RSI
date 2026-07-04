@@ -180,10 +180,10 @@ def main():
             triggede.append({
                 "ticker": ticker,
                 "navn": navn,
-                "forrige_lukk": komponenter["forrige_lukk"],
-                "target_kurs": target_kurs,
-                "live_kurs": live_pris,
-                "dagens_rsi": dagens_rsi,
+                "forrige_lukk": round(komponenter["forrige_lukk"], 2),
+                "target_kurs": round(target_kurs, 2),
+                "live_kurs": round(live_pris, 2),
+                "dagens_rsi": round(dagens_rsi, 2),
             })
             state[ticker] = i_dag
 
