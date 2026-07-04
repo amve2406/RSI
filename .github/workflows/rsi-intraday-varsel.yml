@@ -1,0 +1,35 @@
+name: RSI intraday-varsel
+
+on:
+  schedule:
+    - cron: "*/15 7-14 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  sjekk-rsi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Hent kode
+        uses: actions/checkout@v4
+
+      - name: Sett opp Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Installer pakker
+        run: pip install yfinance pandas numpy
+
+      - name: Kjør varsel-sjekk
+        env:
+          EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+        run: python intraday_varsel.py
+
+      - name: Lagre varsel-status
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Oppdater varsel_state.json"
+          file_pattern: varsel_state.json
