@@ -2,7 +2,7 @@ name: RSI intraday-varsel
 
 on:
   schedule:
-    - cron: "*/15 7-14 * * 1-5"
+    - cron: "*/10 7-14 * * 1-5"
   workflow_dispatch:
 
 jobs:
