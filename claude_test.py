@@ -145,6 +145,28 @@ def formater_dato(dato_str):
     except:
         return str(dato_str)
 
+def parse_dato(dato_str):
+    """Parser en dato-streng (ISO med/uten tid, eller dd.mm.åååå) til et date-objekt."""
+    s = str(dato_str)
+    try:
+        if "T" in s:
+            return datetime.fromisoformat(s.replace("Z", "+00:00")).date()
+        return datetime.strptime(s, "%Y-%m-%d").date()
+    except Exception:
+        pass
+    try:
+        return datetime.strptime(s, "%d.%m.%Y").date()
+    except Exception:
+        return None
+
+def beregn_dager_holdt(dato_str, salgsdato_str):
+    """Antall dager mellom kjøpsdato og salgsdato. Returnerer '–' hvis dato mangler/feiler."""
+    kjop = parse_dato(dato_str)
+    salg = parse_dato(salgsdato_str)
+    if kjop and salg:
+        return (salg - kjop).days
+    return "–"
+
 def bygg_posisjoner_html(alle_posisjoner, rsi_df):
     aktive = [p for p in alle_posisjoner if p.get("Status") == "Aktiv"]
     solgte = [p for p in alle_posisjoner if p.get("Status") == "Solgt"]
@@ -227,6 +249,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                 antall_solgt = int(str(p.get("Antall solgt", antall)).replace(",", "."))
                 kjopsdato = formater_dato(p.get("Dato", ""))
                 salgsdato = formater_dato(p.get("Salgsdato", ""))
+                dager_holdt = beregn_dager_holdt(p.get("Dato", ""), p.get("Salgsdato", ""))
 
                 pl = round((salgskurs - kjopskurs) * antall_solgt, 2)
                 pl_pst = round(((salgskurs - kjopskurs) / kjopskurs) * 100, 2)
@@ -242,6 +265,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                     <td style="color:{farge}"><b>{tegn}{pl} kr ({tegn}{pl_pst}%)</b></td>
                     <td>{kjopsdato}</td>
                     <td>{salgsdato}</td>
+                    <td>{dager_holdt}</td>
                 </tr>"""
             except Exception as e:
                 print(f"Feil på solgt posisjon {p}: {e}")
@@ -252,7 +276,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
         <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
             <tr style="background:#f0f0f0">
                 <th>Aksje</th><th>Kjøpskurs</th><th>Salgskurs</th>
-                <th>Antall</th><th>Realisert P/L</th><th>Kjøpsdato</th><th>Salgsdato</th>
+                <th>Antall</th><th>Realisert P/L</th><th>Kjøpsdato</th><th>Salgsdato</th><th>Dager holdt</th>
             </tr>
             {rader_solgt}
         </table>
