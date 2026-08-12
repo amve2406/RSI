@@ -223,9 +223,13 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
     solgte = [p for p in alle_posisjoner if p.get("Status") == "Solgt"]
 
     rsi_lookup = {}
+    mal_lookup = {}
+    mal_pct_lookup = {}
     if not rsi_df.empty:
         for _, row in rsi_df.iterrows():
             rsi_lookup[row["Ticker"]] = row["RSI 14"]
+            mal_lookup[row["Ticker"]] = row.get("Mål 65", "–")
+            mal_pct_lookup[row["Ticker"]] = row.get("Mål 65 %", None)
 
     # Aktive posisjoner
     aktiv_html = ""
@@ -245,6 +249,14 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                 antall = int(str(p.get("Antall", 0)).replace(",", "."))
                 dato = formater_dato(p.get("Dato", ""))
                 rsi = rsi_lookup.get(ticker, "–")
+
+                mal = mal_lookup.get(ticker, "–")
+                mal_pct = mal_pct_lookup.get(ticker, None)
+                if isinstance(mal, (int, float)) and pd.notna(mal) and pd.notna(mal_pct):
+                    tegn_mal = "+" if mal_pct >= 0 else ""
+                    mal_celle = f"{mal} <span style='color:#888'>({tegn_mal}{mal_pct}%)</span>"
+                else:
+                    mal_celle = "–"
 
                 data = yf.download(ticker, period="5d", progress=False, auto_adjust=False)
                 if data.empty:
@@ -266,6 +278,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                     <td style="color:{farge}"><b>{tegn}{pl} kr ({tegn}{pl_pst}%)</b></td>
                     <td>{dato}</td>
                     <td>{rsi}</td>
+                    <td>{mal_celle}</td>
                     <td><a href="{selg_lenke}" style="background:#d93025;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;">Selg</a></td>
                 </tr>"""
             except Exception as e:
@@ -277,7 +290,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
         <table border="1" cellpadding="6" style="border-collapse:collapse; width:100%">
             <tr style="background:#f0f0f0">
                 <th>Aksje</th><th>Kjøpskurs</th><th>Dagens kurs</th>
-                <th>Antall</th><th>P/L</th><th>Kjøpsdato</th><th>RSI 14</th><th></th>
+                <th>Antall</th><th>P/L</th><th>Kjøpsdato</th><th>RSI 14</th><th>Kurs → RSI 65</th><th></th>
             </tr>
             {rader}
         </table>
@@ -360,25 +373,17 @@ def send_email(df, posisjoner_html, solgte_html):
         rader = ""
         for _, row in df_del.iterrows():
             lenke = f"{GITHUB_PAGES_URL}?ticker={row['Ticker']}&navn={row['Navn']}"
-            mal = row.get("Mål 65", "–")
-            mal_pct = row.get("Mål 65 %", None)
-            if isinstance(mal, (int, float)) and pd.notna(mal) and pd.notna(mal_pct):
-                tegn = "+" if mal_pct >= 0 else ""
-                mal_celle = f"{mal} <span style='color:#888'>({tegn}{mal_pct}%)</span>"
-            else:
-                mal_celle = "–"
             rader += f"""<tr>
                 <td>{row['Ticker']}</td>
                 <td>{row['Navn']}</td>
                 <td>{row['Børs']}</td>
                 <td>{row['Kurs']}</td>
                 <td>{row['RSI 14']}</td>
-                <td>{mal_celle}</td>
                 <td><a href="{lenke}" style="background:#2ea44f;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;">+ Legg til</a></td>
             </tr>"""
         return f"""<table border="1" cellpadding="6" style="border-collapse:collapse">
             <tr style="background:#f0f0f0">
-                <th>Ticker</th><th>Navn</th><th>Børs</th><th>Kurs</th><th>RSI 14</th><th>Kurs → RSI 65</th><th></th>
+                <th>Ticker</th><th>Navn</th><th>Børs</th><th>Kurs</th><th>RSI 14</th><th></th>
             </tr>{rader}</table>"""
 
     body = f"""
