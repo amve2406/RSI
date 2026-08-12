@@ -93,6 +93,10 @@ AKSJER = {
     "QTCOM.HE": "Qt Group",
 }
 
+MAL_RSI = 65.0            # kursen vi regner mot
+VIS_MAL_RSI_OVER = 55.0  # regn bare ut mål-kurs når RSI er minst dette
+
+
 def beregn_rsi(priser, perioder=14):
     delta = priser.diff()
     gevinst = delta.clip(lower=0)
@@ -103,6 +107,37 @@ def beregn_rsi(priser, perioder=14):
     rsi = 100 - (100 / (1 + rs))
     return round(rsi.iloc[-1], 2)
 
+
+def beregn_rsi_detaljer(priser, perioder=14):
+    """Som beregn_rsi, men returnerer også siste glattede snitt (til mål-kurs)."""
+    delta = priser.diff()
+    gevinst = delta.clip(lower=0)
+    tap = -delta.clip(upper=0)
+    avg_gevinst = gevinst.ewm(com=perioder - 1, min_periods=perioder).mean()
+    avg_tap = tap.ewm(com=perioder - 1, min_periods=perioder).mean()
+    rs = avg_gevinst / avg_tap
+    rsi = 100 - (100 / (1 + rs))
+    return {
+        "rsi": round(float(rsi.iloc[-1]), 2),
+        "avg_gain": float(avg_gevinst.iloc[-1]),
+        "avg_loss": float(avg_tap.iloc[-1]),
+    }
+
+
+def malkurs_neste_dag(avg_gain, avg_loss, siste_kurs, mal_rsi=MAL_RSI, perioder=14):
+    """Lukkekurs neste dag som gir mål-RSI, med samme Wilder-glatting som RSI-en."""
+    if avg_loss == 0:
+        return None
+    rs_mal = mal_rsi / (100.0 - mal_rsi)
+    n1 = perioder - 1
+    rs_dag = avg_gain / avg_loss
+    if rs_dag <= rs_mal:                        # under målet -> gevinstdag
+        kurs = siste_kurs + n1 * (rs_mal * avg_loss - avg_gain)
+    else:                                       # allerede over -> tapsdag
+        kurs = siste_kurs + n1 * (avg_loss - avg_gain / rs_mal)
+    return round(kurs, 2)
+
+
 def hent_rsi_data(tickers):
     resultater = []
     for ticker, navn in tickers.items():
@@ -111,19 +146,31 @@ def hent_rsi_data(tickers):
             if data.empty or len(data) < 50:
                 continue
             close = data["Close"].squeeze()
-            rsi = beregn_rsi(close)
+            det = beregn_rsi_detaljer(close)
+            rsi = det["rsi"]
             siste_kurs = round(float(close.iloc[-1]), 2)
+
+            mal_kurs, mal_pct = "–", None
+            if rsi >= VIS_MAL_RSI_OVER:
+                mk = malkurs_neste_dag(det["avg_gain"], det["avg_loss"], siste_kurs)
+                if mk is not None:
+                    mal_kurs = mk
+                    mal_pct = round((mk / siste_kurs - 1) * 100, 2)
+
             bors = ticker.split(".")[-1]
             resultater.append({
                 "Ticker": ticker,
                 "Navn": navn,
                 "Børs": bors,
                 "Kurs": siste_kurs,
-                "RSI 14": rsi
+                "RSI 14": rsi,
+                "Mål 65": mal_kurs,
+                "Mål 65 %": mal_pct,
             })
         except Exception as e:
             print(f"FEIL: {ticker} – {e}")
     return pd.DataFrame(resultater)
+
 
 def hent_alle_posisjoner():
     try:
@@ -136,6 +183,7 @@ def hent_alle_posisjoner():
         print(f"Kunne ikke hente posisjoner: {e}")
         return []
 
+
 def formater_dato(dato_str):
     try:
         if "T" in str(dato_str):
@@ -144,6 +192,7 @@ def formater_dato(dato_str):
         return str(dato_str)
     except:
         return str(dato_str)
+
 
 def parse_dato(dato_str):
     """Parser en dato-streng (ISO med/uten tid, eller dd.mm.åååå) til et date-objekt."""
@@ -159,6 +208,7 @@ def parse_dato(dato_str):
     except Exception:
         return None
 
+
 def beregn_dager_holdt(dato_str, salgsdato_str):
     """Antall dager mellom kjøpsdato og salgsdato. Returnerer '–' hvis dato mangler/feiler."""
     kjop = parse_dato(dato_str)
@@ -166,6 +216,7 @@ def beregn_dager_holdt(dato_str, salgsdato_str):
     if kjop and salg:
         return (salg - kjop).days
     return "–"
+
 
 def bygg_posisjoner_html(alle_posisjoner, rsi_df):
     aktive = [p for p in alle_posisjoner if p.get("Status") == "Aktiv"]
@@ -292,6 +343,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
 
     return aktiv_html + total_html, solgt_html
 
+
 def send_email(df, posisjoner_html, solgte_html):
     sender = os.environ["EMAIL_ADDRESS"]
     password = os.environ["EMAIL_PASSWORD"]
@@ -308,17 +360,25 @@ def send_email(df, posisjoner_html, solgte_html):
         rader = ""
         for _, row in df_del.iterrows():
             lenke = f"{GITHUB_PAGES_URL}?ticker={row['Ticker']}&navn={row['Navn']}"
+            mal = row.get("Mål 65", "–")
+            mal_pct = row.get("Mål 65 %", None)
+            if isinstance(mal, (int, float)) and pd.notna(mal) and pd.notna(mal_pct):
+                tegn = "+" if mal_pct >= 0 else ""
+                mal_celle = f"{mal} <span style='color:#888'>({tegn}{mal_pct}%)</span>"
+            else:
+                mal_celle = "–"
             rader += f"""<tr>
                 <td>{row['Ticker']}</td>
                 <td>{row['Navn']}</td>
                 <td>{row['Børs']}</td>
                 <td>{row['Kurs']}</td>
                 <td>{row['RSI 14']}</td>
+                <td>{mal_celle}</td>
                 <td><a href="{lenke}" style="background:#2ea44f;color:white;padding:4px 10px;border-radius:4px;text-decoration:none;">+ Legg til</a></td>
             </tr>"""
         return f"""<table border="1" cellpadding="6" style="border-collapse:collapse">
             <tr style="background:#f0f0f0">
-                <th>Ticker</th><th>Navn</th><th>Børs</th><th>Kurs</th><th>RSI 14</th><th></th>
+                <th>Ticker</th><th>Navn</th><th>Børs</th><th>Kurs</th><th>RSI 14</th><th>Kurs → RSI 65</th><th></th>
             </tr>{rader}</table>"""
 
     body = f"""
@@ -354,6 +414,7 @@ def send_email(df, posisjoner_html, solgte_html):
         server.sendmail(sender, receiver, msg.as_string())
 
     print(f"E-post sendt! {len(df)} aksjer analysert.")
+
 
 df = hent_rsi_data(AKSJER)
 alle_posisjoner = hent_alle_posisjoner()
