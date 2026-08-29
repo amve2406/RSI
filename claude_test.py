@@ -142,7 +142,8 @@ def hent_rsi_data(tickers):
     resultater = []
     for ticker, navn in tickers.items():
         try:
-            data = yf.download(ticker, period="1y", progress=False, auto_adjust=True)
+            # ENDRET: bruker Ticker().history() i stedet for yf.download()
+            data = yf.Ticker(ticker).history(period="1y", auto_adjust=False)
             if data.empty or len(data) < 50:
                 continue
             close = data["Close"].squeeze()
@@ -258,7 +259,8 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                 else:
                     mal_celle = "–"
 
-                data = yf.download(ticker, period="5d", progress=False, auto_adjust=True)
+                # ENDRET: bruker Ticker().history() i stedet for yf.download()
+                data = yf.Ticker(ticker).history(period="5d", auto_adjust=False)
                 if data.empty:
                     continue
                 dagens_kurs = round(float(data["Close"].squeeze().iloc[-1]), 2)
