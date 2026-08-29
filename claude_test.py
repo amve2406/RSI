@@ -142,7 +142,7 @@ def hent_rsi_data(tickers):
     resultater = []
     for ticker, navn in tickers.items():
         try:
-            data = yf.download(ticker, period="1y", progress=False, auto_adjust=False)
+            data = yf.download(ticker, period="1y", progress=False, auto_adjust=True)
             if data.empty or len(data) < 50:
                 continue
             close = data["Close"].squeeze()
