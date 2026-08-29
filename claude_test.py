@@ -258,7 +258,7 @@ def bygg_posisjoner_html(alle_posisjoner, rsi_df):
                 else:
                     mal_celle = "–"
 
-                data = yf.download(ticker, period="5d", progress=False, auto_adjust=False)
+                data = yf.download(ticker, period="5d", progress=False, auto_adjust=True)
                 if data.empty:
                     continue
                 dagens_kurs = round(float(data["Close"].squeeze().iloc[-1]), 2)
